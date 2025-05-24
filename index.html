@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorateur du Système Solaire</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0c0c2b 0%, #1a1a4a 50%, #2d1b69 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animation des étoiles */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Container principal responsive */
+        .game-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header du jeu */
+        .game-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .game-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            background: linear-gradient(45deg, #ffd700, #ff6b6b, #4ecdc4);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+        }
+
+        /* Zone de jeu */
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .planet-display {
+            position: relative;
+            width: min(300px, 80vw);
+            height: min(300px, 80vw);
+            margin: 1rem auto;
+        }
+
+        .planet {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            animation: float 4s ease-in-out infinite, rotate 20s linear infinite;
+            box-shadow: 0 0 50px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .planet:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotateY(0deg); }
+            50% { transform: translateY(-20px) rotateY(180deg); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotateZ(0deg); }
+            to { transform: rotateZ(360deg); }
+        }
+
+        /* Styles des planètes */
+        .mercury { background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b, #8b7355); }
+        .venus { background: radial-gradient(circle at 30% 30%, #ffc649, #ff8c42, #ff6b35); }
+        .earth { background: radial-gradient(circle at 30% 30%, #4a90e2, #228b22, #32cd32); }
+        .mars { background: radial-gradient(circle at 30% 30%, #ff6b47, #cd5c5c, #a0522d); }
+        .jupiter { background: radial-gradient(circle at 30% 30%, #d2691e, #deb887, #f4a460); }
+        .saturn { background: radial-gradient(circle at 30% 30%, #fad5a5, #daa520, #b8860b); }
+        .uranus { background: radial-gradient(circle at 30% 30%, #4fd0e7, #40e0d0, #00ced1); }
+        .neptune { background: radial-gradient(circle at 30% 30%, #4169e1, #0000cd, #191970); }
+
+        /* Options de réponse */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .option-btn:hover::before {
+            left: 100%;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .option-btn.correct {
+            background: rgba(76, 175, 80, 0.8);
+            border-color: #4caf50;
+            animation: correctPulse 0.6s ease;
+        }
+
+        .option-btn.incorrect {
+            background: rgba(244, 67, 54, 0.8);
+            border-color: #f44336;
+            animation: incorrectShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Feedback */
+        .feedback {
+            text-align: center;
+            color: white;
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            margin-top: 1rem;
+            min-height: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        /* Boutons de contrôle */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Instructions */
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            color: white;
+            font-size: clamp(0.9rem, 2vw, 1rem);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 0.5rem;
+            }
+            
+            .options-grid {
+                grid-template-columns: 1fr;
+                gap: 0.8rem;
+            }
+            
+            .score-board {
+                gap: 1rem;
+            }
+            
+            .planet-display {
+                width: min(250px, 90vw);
+                height: min(250px, 90vw);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .option-btn {
+                padding: 0.8rem 1rem;
+            }
+            
+            .control-btn {
+                padding: 0.6rem 1.5rem;
+            }
+        }
+
+        /* Mode paysage mobile */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .game-container {
+                flex-direction: row;
+                align-items: center;
+                gap: 2rem;
+            }
+            
+            .game-header {
+                margin-bottom: 1rem;
+            }
+            
+            .planet-display {
+                width: min(200px, 30vw);
+                height: min(200px, 30vw);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    
+    <div class="game-container">
+        <header class="game-header">
+            <h1 class="game-title">🚀 Explorateur du Système Solaire</h1>
+            <div class="instructions">
+                Identifie la planète qui apparaît ! Clique sur la bonne réponse pour marquer des points.
+            </div>
+            <div class="score-board">
+                <div class="score-item">Score: <span id="score">0</span></div>
+                <div class="score-item">Question: <span id="question-count">1</span>/10</div>
+                <div class="score-item">Niveau: <span id="level">Débutant</span></div>
+            </div>
+        </header>
+
+        <main class="game-area">
+            <div class="planet-display">
+                <div id="current-planet" class="planet earth"></div>
+            </div>
+
+            <div class="options-grid" id="options-grid">
+                <!-- Options générées dynamiquement -->
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+
+            <div class="controls">
+                <button class="control-btn" onclick="nextQuestion()">Question Suivante</button>
+                <button class="control-btn" onclick="restartGame()">Recommencer</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        class SolarSystemGame {
+            constructor() {
+                this.planets = [
+                    { name: 'Mercure', class: 'mercury', info: 'La planète la plus proche du Soleil' },
+                    { name: 'Vénus', class: 'venus', info: 'La planète la plus chaude du système solaire' },
+                    { name: 'Terre', class: 'earth', info: 'Notre planète bleue avec de la vie' },
+                    { name: 'Mars', class: 'mars', info: 'La planète rouge avec des calottes polaires' },
+                    { name: 'Jupiter', class: 'jupiter', info: 'La plus grande planète du système solaire' },
+                    { name: 'Saturne', class: 'saturn', info: 'La planète aux magnifiques anneaux' },
+                    { name: 'Uranus', class: 'uranus', info: 'Une planète qui tourne sur le côté' },
+                    { name: 'Neptune', class: 'neptune', info: 'La planète la plus éloignée du Soleil' }
+                ];
+                
+                this.score = 0;
+                this.questionCount = 0;
+                this.maxQuestions = 10;
+                this.currentPlanet = null;
+                this.gameActive = true;
+                
+                this.init();
+            }
+
+            init() {
+                this.createStars();
+                this.nextQuestion();
+                this.updateDisplay();
+            }
+
+            createStars() {
+                const starsContainer = document.querySelector('.stars');
+                const numStars = 100;
+                
+                for (let i = 0; i < numStars; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    star.style.left = Math.random() * 100 + '%';
+                    star.style.top = Math.random() * 100 + '%';
+                    star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+                    star.style.animationDelay = Math.random() * 3 + 's';
+                    starsContainer.appendChild(star);
+                }
+            }
+
+            nextQuestion() {
+                if (this.questionCount >= this.maxQuestions) {
+                    this.endGame();
+                    return;
+                }
+
+                this.questionCount++;
+                this.currentPlanet = this.planets[Math.floor(Math.random() * this.planets.length)];
+                
+                const planetElement = document.getElementById('current-planet');
+                planetElement.className = `planet ${this.currentPlanet.class}`;
+                
+                this.generateOptions();
+                this.clearFeedback();
+                this.updateDisplay();
+                this.gameActive = true;
+            }
+
+            generateOptions() {
+                const optionsGrid = document.getElementById('options-grid');
+                optionsGrid.innerHTML = '';
+                
+                // Créer un tableau avec la bonne réponse et 3 mauvaises
+                const options = [this.currentPlanet];
+                while (options.length < 4) {
+                    const randomPlanet = this.planets[Math.floor(Math.random() * this.planets.length)];
+                    if (!options.includes(randomPlanet)) {
+                        options.push(randomPlanet);
+                    }
+                }
+                
+                // Mélanger les options
+                options.sort(() => Math.random() - 0.5);
+                
+                options.forEach(planet => {
+                    const button = document.createElement('button');
+                    button.className = 'option-btn';
+                    button.textContent = planet.name;
+                    button.onclick = () => this.selectOption(planet, button);
+                    optionsGrid.appendChild(button);
+                });
+            }
+
+            selectOption(selectedPlanet, buttonElement) {
+                if (!this.gameActive) return;
+                
+                this.gameActive = false;
+                const allButtons = document.querySelectorAll('.option-btn');
+                
+                if (selectedPlanet === this.currentPlanet) {
+                    buttonElement.classList.add('correct');
+                    this.score += 10;
+                    this.showFeedback(`🎉 Excellent ! ${selectedPlanet.info}`, 'correct');
+                } else {
+                    buttonElement.classList.add('incorrect');
+                    // Montrer la bonne réponse
+                    allButtons.forEach(btn => {
+                        if (btn.textContent === this.currentPlanet.name) {
+                            btn.classList.add('correct');
+                        }
+                    });
+                    this.showFeedback(`❌ Non, c'était ${this.currentPlanet.name}. ${this.currentPlanet.info}`, 'incorrect');
+                }
+                
+                this.updateDisplay();
+                
+                // Auto-passage à la question suivante après 3 secondes
+                setTimeout(() => {
+                    allButtons.forEach(btn => {
+                        btn.classList.remove('correct', 'incorrect');
+                    });
+                    this.nextQuestion();
+                }, 3000);
+            }
+
+            showFeedback(message, type) {
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = message;
+                feedback.className = `feedback show ${type}`;
+            }
+
+            clearFeedback() {
+                const feedback = document.getElementById('feedback');
+                feedback.className = 'feedback';
+                feedback.textContent = '';
+            }
+
+            updateDisplay() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('question-count').textContent = this.questionCount;
+                
+                // Système de niveaux
+                let level = 'Débutant';
+                if (this.score >= 80) level = 'Expert';
+                else if (this.score >= 60) level = 'Avancé';
+                else if (this.score >= 30) level = 'Intermédiaire';
+                
+                document.getElementById('level').textContent = level;
+            }
+
+            endGame() {
+                const percentage = (this.score / (this.maxQuestions * 10)) * 100;
+                let message = `🎯 Jeu terminé ! Score final: ${this.score}/${this.maxQuestions * 10} (${percentage}%)`;
+                
+                if (percentage >= 90) message += '\n🏆 Astronaute confirmé !';
+                else if (percentage >= 70) message += '\n🌟 Très bonne performance !';
+                else if (percentage >= 50) message += '\n🚀 Bon travail !';
+                else message += '\n📚 Continue à explorer l\'espace !';
+                
+                this.showFeedback(message, 'final');
+            }
+
+            restart() {
+                this.score = 0;
+                this.questionCount = 0;
+                this.gameActive = true;
+                this.nextQuestion();
+            }
+        }
+
+        // Instance globale du jeu
+        let game;
+
+        // Fonctions globales pour les boutons
+        function nextQuestion() {
+            if (game && game.gameActive) {
+                game.nextQuestion();
+            }
+        }
+
+        function restartGame() {
+            game = new SolarSystemGame();
+        }
+
+        // Démarrage du jeu
+        window.addEventListener('load', () => {
+            game = new SolarSystemGame();
+        });
+
+        // Gestion responsive du redimensionnement
+        window.addEventListener('resize', () => {
+            // Recalculer les étoiles si nécessaire
+            const starsContainer = document.querySelector('.stars');
+            if (starsContainer.children.length === 0) {
+                game.createStars();
+            }
+        });
+    </script>
+</body>
+</html>
